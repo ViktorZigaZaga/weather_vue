@@ -1,11 +1,11 @@
 <template>
-  <div id="app" :class="typeof weather.name != 'undefined'">
+  <div id="app" :class="errored ? 'error' : ''">
 
     <main>
       <h1>Узнай погоду в своем городе</h1>
       <div class="search-box">
         <form @submit.prevent>
-          <div v-if ="!isWeatherLoading" >
+          <div v-if="!isWeatherLoading">
             <input
               class="search-bar"
               type="text"
@@ -27,13 +27,8 @@
         </div>
         <div class="weather-box">
           <div class="temp"> {{ Math.round(weather.main.temp)}} °C</div>
-          <div id="weather" :class="weather.weather[0].main == 'Clear' ? 'clear'
-                                  : weather.weather[0].main == 'Error' ? 'error'
-                                  : weather.weather[0].main == 'Clouds' ? 'clouds'
-                                  : weather.weather[0].main == 'Fog' ? 'fog'
-                                  : weather.weather[0].main == 'Storm' ? 'storm'
-                                  : weather.weather[0].main == 'Snow' ? 'snow'
-                                  : weather.weather[0].main == 'Rain' ? 'rain' : 'weather'">
+          <div id="weather" :class="!weather.weather.length ? 'weather'
+          : weather.weather[0].main.toLowerCase()">
             {{weather.weather[0].main}}
           </div>
         </div>
@@ -44,6 +39,7 @@
 
 <script>
 import axios from 'axios';
+import moment from 'moment';
 
 export default {
   name: 'app',
@@ -66,8 +62,10 @@ export default {
           const response = await axios.get(`${this.urlOWN}weather?q=${this.queryCity}&units=metric&APPID=${this.apiKey}`);
           this.setResults(response.data);
           this.isWeatherLoading = false;
+          this.errored = false;
         }, 1000);
       } catch (error) {
+        this.errored = true;
         console.log(error);
       }
     },
@@ -75,14 +73,8 @@ export default {
       this.weather = results;
     },
     dateBuilder() {
-      const d = new Date();
-      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const day = days[d.getDay()];
-      const date = d.getDate();
-      const month = months[d.getMonth()];
-      const year = d.getFullYear();
-      return `${day} ${date} ${month} ${year}`;
+      const now = moment();
+      return now.format('dddd, DD MMMM YYYY');
     },
   },
 };
@@ -191,10 +183,8 @@ main{
   box-shadow: 3px 6px rgba(0, 0, 0, 0.25);
 }
 #weather{
-  display: flex;
-  position: absolute;
-  left: 35%;
-  top: 65%;
+  display: inline-flex;
+  text-align: center;
   padding: 10px 25px;
   color: #FFF;
   font-size: 102px;
